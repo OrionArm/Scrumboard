@@ -1,6 +1,7 @@
 from django.shortcuts import render
 from django.contrib.auth import get_user_model
 from rest_framework import authentication, permissions, viewsets, filters
+
 from .serializers import SprintSerializer, TaskSerializer, UserSerializer
 from .models import Sprint, Task
 from .forms import TaskFilter, SprintFilter
