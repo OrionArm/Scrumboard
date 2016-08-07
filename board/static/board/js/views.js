@@ -15,6 +15,7 @@ var TemplateView = Backbone.View.extend({
 	}
 	});
 
+
 var FormView = TemplateView.extend({
 	events: {
 		'submit form': 'submit'
@@ -60,6 +61,21 @@ var FormView = TemplateView.extend({
 	}
 });
 
+var HeaderView = TemplateView.extend({
+	tagName: 'header',
+	templateName: '#header-template',
+	events: {
+		'click a.logout': 'logout'
+	},
+	getContext: function () {
+		return {authenticated: app.session.authenticated()};
+	},
+	logout: function (event) {
+		event.preventDefault();
+		app.session.delete();
+		window.location = '/';
+	}
+});
 var HomepageView = TemplateView.extend({
 	templateName: '#home-template'
 });
@@ -81,7 +97,7 @@ var LoginView = FormView.extend({
 	}
 });
 
-
 app.views.LoginView = LoginView;
 app.views.HomepageView = HomepageView;
+app.views.HeaderView = HeaderView;
 })(jQuery, Backbone, _, app);
