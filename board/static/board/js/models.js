@@ -1,5 +1,27 @@
 (function ($, Backbone, _, app) {
 
+app.models.Sprint = Backbone.Model.extend({});
+app.models.Task = Backbone.Model.extend({});
+app.models.User = Backbone.Model.extend({});
+app.collections.ready = $.getJSON(app.apiRoot);
+app.collections.ready.done(function (data) {
+	app.collections.Sprints = Backbone.Collection.extend({
+		model: app.models.Sprint,
+		url: data.sprints
+	});
+	app.sprints = new app.collections.Sprints();
+
+	app.collections.Tasks = Backbone.Collection.extend({
+		model: app.models.Task,
+		url: data.tasks
+	});
+	app.tasks = new app.collections.Tasks();
+	app.collections.Users = Backbone.Collection.extend({
+		model: app.models.User,
+		url: data.users
+	});
+	app.users = new app.collections.Users();
+});
 
 // CSRF helper functions taken directly from Django docs
 function csrfSafeMethod(method) {
@@ -74,5 +96,8 @@ var Session = Backbone.Model.extend({
 	}
 });
 app.session = new Session();
+
+
+
 
 })(jQuery, Backbone, _, app);
