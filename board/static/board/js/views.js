@@ -58,7 +58,11 @@ var FormView = TemplateView.extend({
 		}
 		this.trigger('done');
 		this.remove();
-	}
+	},
+	modelFailure: function (model, xhr, options) {
+		var errors = xhr.responseJSON;
+		this.showErrors(errors);
+	},
 });
 
 var HeaderView = TemplateView.extend({
@@ -76,8 +80,84 @@ var HeaderView = TemplateView.extend({
 		window.location = '/';
 	}
 });
+var SprintView = TemplateView.extend({
+	templateName: '#sprint-template',
+	initialize: function (options) {
+		var self = this;
+		TemplateView.prototype.initialize.apply(this, arguments);
+		this.sprintId = options.sprintId;
+		this.sprint = null;
+		app.collections.ready.done(function () {
+			self.sprint = app.sprints.push({id: self.sprintId});
+			self.sprint.fetch({
+				success: function () {
+					self.render();
+				}
+			});
+		});
+	},
+	getContext: function () {
+	return {sprint: this.sprint};
+	}
+});
+
+var NewSprintView = FormView.extend({
+	templateName: '#new-sprint-template',
+	className: 'new-sprint',
+	events: _.extend({
+		'click button.cancel': 'done',
+	}, FormView.prototype.events),
+	submit: function (event) {
+		var self = this,
+		attributes = {};
+		FormView.prototype.submit.apply(this, arguments);
+		attributes = this.serializeForm(this.form);
+		app.collections.ready.done(function () {
+			app.sprints.create(attributes, {
+				wait: true,
+				success: $.proxy(self.success, self),
+				error: $.proxy(self.modelFailure, self)
+			});
+		});
+	},
+	success: function (model) {
+		this.done();
+		window.location.hash = '#sprint/' + model.get('id');
+	}
+});
+
 var HomepageView = TemplateView.extend({
-	templateName: '#home-template'
+	templateName: '#home-template',
+	events: {
+	'click button.add': 'renderAddForm'
+	},
+	initialize: function (options) {
+		var self = this;
+		TemplateView.prototype.initialize.apply(this, arguments);
+		app.collections.ready.done(function () {
+			var end = new Date();
+			end.setDate(end.getDate() - 7);
+			end = end.toISOString().replace(/T.*/g, '');
+			app.sprints.fetch({
+					data: {end_min: end},
+					success: $.proxy(self.render, self)
+			});
+		});
+	},
+	getContext: function () {
+		return {sprints: app.sprints || null};
+	},
+	renderAddForm: function (event) {
+		var view = new NewSprintView(),
+		link = $(event.currentTarget);
+		event.preventDefault();
+		link.before(view.el);
+		link.hide();
+		view.render();
+		view.on('done', function () {
+			link.show();
+		});
+	},
 });
 
 var LoginView = FormView.extend({
@@ -94,10 +174,12 @@ var LoginView = FormView.extend({
 	loginSuccess: function (data) {
 		app.session.save(data.token);
 		this.done();
-	}
+	},
+
 });
 
 app.views.LoginView = LoginView;
 app.views.HomepageView = HomepageView;
 app.views.HeaderView = HeaderView;
+app.views.SprintView = SprintView;
 })(jQuery, Backbone, _, app);

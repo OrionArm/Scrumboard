@@ -22,22 +22,40 @@ var BaseCollection = Backbone.Collection.extend({
 		this._previous = response.previous;
 		this._count = response.count;
 	return response.results || [];
-	}
+	},
+	getOrFetch: function (id) {
+		var result = new $.Deferred(),
+		model = this.get(id);
+		if (!model) {
+			model = this.push({id: id});
+			model.fetch({
+				success: function (model, response, options) {
+				result.resolve(model);
+				},
+				error: function (model, response, options) {
+					result.reject(model, response);
+				}
+			});
+		} else {
+			result.resolve(model);
+		}
+		return result;
+	},
 });
 app.collections.ready = $.getJSON(app.apiRoot);
 app.collections.ready.done(function (data) {
-	app.collections.Sprints = BaseCollection.Collection.extend({
+	app.collections.Sprints = BaseCollection.extend({
 		model: app.models.Sprint,
 		url: data.sprints
 	});
 	app.sprints = new app.collections.Sprints();
 
-	app.collections.Tasks = BaseCollection.Collection.extend({
+	app.collections.Tasks = BaseCollection.extend({
 		model: app.models.Task,
 		url: data.tasks
 	});
 	app.tasks = new app.collections.Tasks();
-	app.collections.Users = BaseCollection.Collection.extend({
+	app.collections.Users = BaseCollection.extend({
 		model: app.models.User,
 		url: data.users
 	});
